@@ -3,39 +3,56 @@
 #include<set>
 #include<string>
 #include<string_view>
-#include<tuple>
 #include<unordered_map>
 #include<vector>
 #include "geo.h"
 
 namespace transport_catalogue {
-	struct Stop //РЅР°Р·РІР°РЅРёРµ РѕСЃС‚Р°РЅРѕРІРєРё, РєРѕРѕСЂРґРёРЅР°С‚С‹ РѕСЃС‚Р°РЅРѕРІРєРё, Р°РІС‚РѕР±СѓСЃС‹, РїСЂРѕС…РѕРґСЏС‰РёРµ С‡РµСЂРµР· РѕСЃС‚Р°РЅРѕРІРєСѓ
+	struct Stop
 	{
 		std::string name;
 		geo::Coordinates lat_lng;
+		std::set<std::string_view> buses; //автобусы, проходящие через остановку
+	};
+
+	enum StopSearchResults {
+		NOT_FOUND,
+		FOUND_NO_BUSES,
+		FOUND_WITH_BUSES,
+	};
+
+	struct StopSearchResult
+	{
+		StopSearchResults result;
 		std::set<std::string_view> buses;
 	};
 
-	struct Bus //РЅРѕРјРµСЂ Р°РІС‚РѕР±СѓСЃР°, РјР°СЂС€СЂСѓС‚, РєРѕР»-РІРѕ СѓРЅРёРєР°Р»СЊРЅС‹С… РѕСЃС‚Р°РЅРѕРІРѕРє РІ РјР°СЂС€СЂСѓС‚Рµ, РґР»РёРЅР° РјР°СЂС€СЂСѓС‚Р°
+	struct Bus
 	{
 		std::string number;
 		std::vector<Stop*> route;
-		size_t unique_stops_count;
-		double length;
+	};
+
+	struct BusSearchResult 
+	{
+		size_t stops_on_route;
+		size_t unique_stops;
+		double route_length;
 	};
 
 	class TransportCatalogue {
-		// Р РµР°Р»РёР·СѓР№С‚Рµ РєР»Р°СЃСЃ СЃР°РјРѕСЃС‚РѕСЏС‚РµР»СЊРЅРѕ
+		// Реализуйте класс самостоятельно
 	public:
-		void AddStop(std::string stop_name, geo::Coordinates lat_lng); //РґРѕР±Р°РІР»РµРЅРёРµ РѕСЃС‚Р°РЅРѕРІРєРё
-		void AddBus(std::string bus_number, std::vector<std::string_view> bus_route); //РґРѕР±Р°РІР»РµРЅРёРµ Р°РІС‚РѕР±СѓСЃР°
-		const std::tuple<size_t, size_t, double> BusSearch(std::string_view bus_name) const; //РѕР±СЂР°Р±РѕС‚РєР° Р·Р°РїСЂРѕСЃР° РЅР° РїРѕРёСЃРє Р°РІС‚РѕР±СѓСЃРЅРѕРіРѕ РјР°СЂС€СЂСѓС‚Р°
-		const std::tuple<std::string, std::set<std::string_view>> StopSearch(std::string_view stop_name) const; //РѕР±СЂР°Р±РѕС‚РєР° Р·Р°РїСЂРѕСЃР° РЅР° РїРѕРёСЃРє РѕСЃС‚Р°РЅРѕРІРєРё
+		void AddStop(const std::string& stop_name, geo::Coordinates lat_lng); //добавление остановки
+		void AddBus(const std::string& bus_number, const std::vector<std::string_view>& bus_route); //добавление автобуса
+		const BusSearchResult BusSearch(std::string_view bus_name) const; //обработка запроса на поиск автобусного маршрута
+		const StopSearchResult StopSearch(std::string_view stop_name) const; //обработка запроса на поиск остановки
 
 	private:
 		std::deque<Stop> stops_;
-		std::unordered_map<std::string_view, Stop*> stop_lookup_table_; //С…РµС€-С‚Р°Р±Р»РёС†Р° РґР»СЏ Р±С‹СЃС‚СЂРѕРіРѕ РїРѕРёСЃРєР° РѕСЃС‚Р°РЅРѕРІРєРё
+		std::unordered_map<std::string_view, Stop*> stop_lookup_table_; //хеш-таблица для быстрого поиска остановки
 		std::deque<Bus> buses_;
-		std::unordered_map<std::string_view, Bus*> bus_lookup_table_; //С…РµС€-С‚Р°Р±Р»РёС†Р° РґР»СЏ Р±С‹СЃС‚СЂРѕРіРѕ РїРѕРёСЃРєР° Р°РІС‚РѕР±СѓСЃРЅРѕРіРѕ РјР°СЂС€СЂСѓС‚Р°
+		std::deque<BusSearchResult> bus_search_results_;
+		std::unordered_map<std::string_view, std::pair<Bus*, BusSearchResult*>> bus_lookup_table_; //хеш-таблица для быстрого поиска автобусного маршрута
 	};
 }

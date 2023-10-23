@@ -11,42 +11,42 @@ namespace request {
 
     void ParseAndPrintStat(const transport_catalogue::TransportCatalogue& transport_catalogue, std::string_view request,
         std::ostream& output) {
-        // Р РµР°Р»РёР·СѓР№С‚Рµ СЃР°РјРѕСЃС‚РѕСЏС‚РµР»СЊРЅРѕ
+        // Реализуйте самостоятельно
         if (request.find("Bus ") != std::string_view::npos) {
             std::string_view bus_number = Trim(request.substr(request.find(' '), request.size() - request.find(' ')));
-            auto [stops_count, unique_stops_count, length] = transport_catalogue.BusSearch(bus_number);
-            if (stops_count == 0) {
+            transport_catalogue::BusSearchResult bus_search_result = transport_catalogue.BusSearch(bus_number);
+            if (bus_search_result.stops_on_route == 0) {
                 output << "Bus " << bus_number << ": not found\n";
                 return;
             }
-            output << "Bus " << bus_number << ": " << stops_count << " stops on route, " << unique_stops_count <<
-                " unique stops, " << length << " route length\n";
+            output << "Bus " << bus_number << ": " << bus_search_result.stops_on_route << " stops on route, " << bus_search_result.unique_stops <<
+                " unique stops, " << bus_search_result.route_length << " route length\n";
             return;
         }
-
+        
         if (request.find("Stop ") != std::string_view::npos) {
             std::string_view stop_name = Trim(request.substr(request.find(' '), request.size() - request.find(' ')));
-            auto [stop_search_result, buses] = transport_catalogue.StopSearch(stop_name);
-
-            if (stop_search_result == "not found") {
+            transport_catalogue::StopSearchResult stop_search_result = transport_catalogue.StopSearch(stop_name);
+            switch (stop_search_result.result)
+            {
+            case transport_catalogue::NOT_FOUND:
                 output << "Stop " << stop_name << ": not found\n";
-                return;
-            }
-
-            if (stop_search_result == "no buses") {
+                break;
+            case transport_catalogue::FOUND_NO_BUSES:
                 output << "Stop " << stop_name << ": no buses\n";
-                return;
-            }
-
-            output << "Stop " << stop_name << ": buses ";
-            size_t count = 0;
-            for (const auto& bus : buses) {
-                if (count != buses.size() - 1) {
-                    output << bus << " ";
-                    ++count;
-                    continue;
+                break;
+            case transport_catalogue::FOUND_WITH_BUSES:
+                output << "Stop " << stop_name << ": buses ";
+                size_t count = 0;
+                for (const auto& bus : stop_search_result.buses) {
+                    if (count != stop_search_result.buses.size() - 1) {
+                        output << bus << " ";
+                        ++count;
+                        continue;
+                    }
+                    output << bus << '\n';
                 }
-                output << bus << '\n';
+                break;
             }
         }
     }
