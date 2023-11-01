@@ -20,7 +20,7 @@ namespace request {
                 return;
             }
             output << "Bus " << bus_number << ": " << bus_search_result.stops_on_route << " stops on route, " << bus_search_result.unique_stops <<
-                " unique stops, " << bus_search_result.route_length << " route length\n";
+                " unique stops, " << bus_search_result.actual_route_length << " route length, " << bus_search_result.curvature << " curvature\n";
             return;
         }
         

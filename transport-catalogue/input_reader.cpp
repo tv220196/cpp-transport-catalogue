@@ -105,14 +105,27 @@ namespace input {
 
     void InputReader::ApplyCommands([[maybe_unused]] transport_catalogue::TransportCatalogue& catalogue) const {
         // Реализуйте метод самостоятельно
+        std::unordered_map<std::string_view, std::vector<std::string_view>> stops_descriptions;
         for (auto& command_ : commands_) {
             if (command_.command == "Stop") {
-                geo::Coordinates lat_lng = ParseCoordinates(command_.description);
+                stops_descriptions[command_.id] = Split(command_.description, ',');
+                std::string coordinates = std::string(stops_descriptions.at(command_.id).at(0)) + ", " + std::string(stops_descriptions.at(command_.id).at(1));
+                geo::Coordinates lat_lng = ParseCoordinates(coordinates);
                 catalogue.AddStop(command_.id, lat_lng);
                 continue;
             }
             if (command_.command == "Bus") {
                 continue;
+            }
+        }
+        for (auto& stop_description : stops_descriptions) {
+            if (stop_description.second.size() < 3) {
+                continue;
+            }
+            for (size_t i = 2; i < stop_description.second.size(); ++i) {
+                int meters = std::stoi(std::string(stop_description.second.at(i).substr(0, stop_description.second.at(i).find_first_of('m'))));
+                std::string destination(stop_description.second.at(i).substr(stop_description.second.at(i).find("m to ")+5, stop_description.second.at(i).size()));
+                catalogue.AddDistance({stop_description.first, destination}, meters);
             }
         }
         for (auto& command_ : commands_) {

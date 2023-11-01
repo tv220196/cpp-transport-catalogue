@@ -37,13 +37,22 @@ namespace transport_catalogue {
 	{
 		size_t stops_on_route;
 		size_t unique_stops;
-		double route_length;
+		int actual_route_length;
+		double curvature;
+	};
+
+	class TwoStopsHasher {
+	public:
+		size_t operator()(const std::pair<std::string_view, std::string_view> stops) const {
+			return std::hash<unsigned long long>{}(static_cast<unsigned long long>(std::hash<std::string_view>{}(stops.first)) + static_cast<unsigned long long>(std::hash<std::string_view>{}(stops.second)));
+		}
 	};
 
 	class TransportCatalogue {
 		// Реализуйте класс самостоятельно
 	public:
 		void AddStop(const std::string& stop_name, geo::Coordinates lat_lng); //добавление остановки
+		void AddDistance(std::pair<std::string_view, const std::string&> stops, int distance); //добавление расстояния между остановками
 		void AddBus(const std::string& bus_number, const std::vector<std::string_view>& bus_route); //добавление автобуса
 		const BusSearchResult BusSearch(std::string_view bus_name) const; //обработка запроса на поиск автобусного маршрута
 		const StopSearchResult StopSearch(std::string_view stop_name) const; //обработка запроса на поиск остановки
@@ -54,5 +63,6 @@ namespace transport_catalogue {
 		std::deque<Bus> buses_;
 		std::deque<BusSearchResult> bus_search_results_;
 		std::unordered_map<std::string_view, std::pair<Bus*, BusSearchResult*>> bus_lookup_table_; //хеш-таблица для быстрого поиска автобусного маршрута
+		std::unordered_map<std::pair<std::string_view, std::string_view>, int, TwoStopsHasher> distances_; //хеш-таблица для быстрого поиска расстояний между остановками
 	};
 }
