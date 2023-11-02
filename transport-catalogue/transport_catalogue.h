@@ -23,7 +23,7 @@ namespace transport_catalogue {
 
 	struct StopSearchResult
 	{
-		StopSearchResults result;
+		StopSearchResults result; //result - а зачем это? - использую как флаг для определения формата вывода в request::ParseAndPrintStat
 		std::set<std::string_view> buses;
 	};
 
@@ -52,10 +52,10 @@ namespace transport_catalogue {
 		// Реализуйте класс самостоятельно
 	public:
 		void AddStop(const std::string& stop_name, geo::Coordinates lat_lng); //добавление остановки
-		void AddDistance(std::pair<std::string_view, const std::string&> stops, int distance); //добавление расстояния между остановками
+		void AddDistance(std::string_view first_stop, const std::string& second_stop, int distance); //добавление расстояния между остановками
 		void AddBus(const std::string& bus_number, const std::vector<std::string_view>& bus_route); //добавление автобуса
-		const BusSearchResult BusSearch(std::string_view bus_name) const; //обработка запроса на поиск автобусного маршрута
-		const StopSearchResult StopSearch(std::string_view stop_name) const; //обработка запроса на поиск остановки
+		const BusSearchResult SearchBus(std::string_view bus_name) const; //обработка запроса на поиск автобусного маршрута
+		const StopSearchResult SearchStop(std::string_view stop_name) const; //обработка запроса на поиск остановки
 
 	private:
 		std::deque<Stop> stops_;

@@ -8,8 +8,8 @@ namespace transport_catalogue {
 		stop_lookup_table_[stops_.back().name] = &stops_.back();
 	}
 
-	void TransportCatalogue::AddDistance(std::pair<std::string_view, const std::string&> stops, int distance) {
-		distances_[{stop_lookup_table_.find(stops.first)->first, stop_lookup_table_.find(stops.second)->first}] = distance;
+	void TransportCatalogue::AddDistance(std::string_view first_stop, const std::string& second_stop, int distance) {
+		distances_[{stop_lookup_table_.find(first_stop)->first, stop_lookup_table_.find(second_stop)->first}] = distance;
 	}
 
 	void TransportCatalogue::AddBus(const std::string& bus_number, const std::vector<std::string_view>& bus_route) {
@@ -44,14 +44,14 @@ namespace transport_catalogue {
 		bus_lookup_table_[buses_.back().number] = { &buses_.back(), &bus_search_results_.back() };
 	}
 
-	const BusSearchResult TransportCatalogue::BusSearch(std::string_view bus_name) const {
+	const BusSearchResult TransportCatalogue::SearchBus(std::string_view bus_name) const {
 		if (bus_lookup_table_.count(bus_name) == 0) {
 			return {0, 0, 0, 0.0};
 		}
 		return *bus_lookup_table_.at(bus_name).second;
 	}
 
-	const StopSearchResult TransportCatalogue::StopSearch(std::string_view stop_name) const {
+	const StopSearchResult TransportCatalogue::SearchStop(std::string_view stop_name) const {
 		if (stop_lookup_table_.count(stop_name) == 0) {
 			return {NOT_FOUND, {}};
 		}

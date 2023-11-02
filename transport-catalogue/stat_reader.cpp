@@ -14,7 +14,7 @@ namespace request {
         // Реализуйте самостоятельно
         if (request.find("Bus ") != std::string_view::npos) {
             std::string_view bus_number = Trim(request.substr(request.find(' '), request.size() - request.find(' ')));
-            transport_catalogue::BusSearchResult bus_search_result = transport_catalogue.BusSearch(bus_number);
+            transport_catalogue::BusSearchResult bus_search_result = transport_catalogue.SearchBus(bus_number);
             if (bus_search_result.stops_on_route == 0) {
                 output << "Bus " << bus_number << ": not found\n";
                 return;
@@ -26,7 +26,7 @@ namespace request {
         
         if (request.find("Stop ") != std::string_view::npos) {
             std::string_view stop_name = Trim(request.substr(request.find(' '), request.size() - request.find(' ')));
-            transport_catalogue::StopSearchResult stop_search_result = transport_catalogue.StopSearch(stop_name);
+            transport_catalogue::StopSearchResult stop_search_result = transport_catalogue.SearchStop(stop_name);
             switch (stop_search_result.result)
             {
             case transport_catalogue::NOT_FOUND:

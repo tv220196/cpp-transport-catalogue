@@ -125,7 +125,7 @@ namespace input {
             for (size_t i = 2; i < stop_description.second.size(); ++i) {
                 int meters = std::stoi(std::string(stop_description.second.at(i).substr(0, stop_description.second.at(i).find_first_of('m'))));
                 std::string destination(stop_description.second.at(i).substr(stop_description.second.at(i).find("m to ")+5, stop_description.second.at(i).size()));
-                catalogue.AddDistance({stop_description.first, destination}, meters);
+                catalogue.AddDistance(stop_description.first, destination, meters);
             }
         }
         for (auto& command_ : commands_) {
