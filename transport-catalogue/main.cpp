@@ -1,33 +1,27 @@
-﻿#include <fstream>
-#include <iostream>
-#include <string>
+﻿#include "json_reader.h"
 
-#include "input_reader.h"
-#include "stat_reader.h"
+/*int main() {
+    transport_catalogue::TransportCatalogue catalogue;
+    
+    json::Document requests;
+    std::cin >> requests;
 
-using namespace std;
+    json_reader::input::Input base_requests;
+    base_requests.FormTransportCatalogue(requests, catalogue);
+
+    map_render::MapRender map;
+    json_reader::visual_settings::SetVisual(requests, map);
+    map.DrawMap(catalogue.GetStops(), catalogue.GetBuses());
+    map.GetMap().Render(std::cout);
+    
+}*/
 
 int main() {
     transport_catalogue::TransportCatalogue catalogue;
-
-    int base_request_count;
-    cin >> base_request_count >> ws;
-
-    {
-        input::InputReader reader;
-        for (int i = 0; i < base_request_count; ++i) {
-            string line;
-            getline(cin, line);
-            reader.ParseLine(line);
-        }
-        reader.ApplyCommands(catalogue);
-    }
-
-    int stat_request_count;
-    cin >> stat_request_count >> ws;
-    for (int i = 0; i < stat_request_count; ++i) {
-        string line;
-        getline(cin, line);
-        request::ParseAndPrintStat(catalogue, line, cout);
-    }
+    json::Document requests;
+    std::cin >> requests;
+    json_reader::input::Input base_requests;
+    base_requests.FormTransportCatalogue(requests, catalogue);
+    json::Document results = json_reader::output::FormOutput(requests, catalogue);
+    std::cout << results;
 }
