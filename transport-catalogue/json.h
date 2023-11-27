@@ -18,17 +18,12 @@ namespace json {
         using runtime_error::runtime_error;
     };
 
-    class Node {
+    using Value = std::variant<std::nullptr_t, int, double, std::string, bool, Array, Dict>;
+
+    class Node : public Value{
     public:
-        Node(std::nullptr_t);
-        Node(int value);
-        Node(double value);
-        Node(std::string value);
-        Node(bool value);
-        Node(Array value);
-        Node(Dict value);
+        Node(Value value);
         Node() = default;
-        using Value = std::variant<std::nullptr_t, int, double, std::string, bool, Array, Dict>;
         const Value& GetValue() const;
         //Следующие методы Node сообщают, хранится ли внутри значение некоторого типа :
         bool IsInt() const;
@@ -49,7 +44,8 @@ namespace json {
         const Dict& AsMap() const;
 
     private:
-        Value value_;
+        Value value_;//еще можно без этой переменной обойтись, а в методе получения значения просто разыменовывать текущий объект 
+                     //- подскажите, пожалуйста, как можно избавиться от этой переменной? не пониманию, где хранить значение Node?
     };
 
     class Document {

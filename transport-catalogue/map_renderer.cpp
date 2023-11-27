@@ -5,33 +5,28 @@ namespace map_render {
 		return std::abs(value) < EPSILON;
 	}
 
-	void MapRender::SetWidth(double width) {
+	void MapRender::SetVisual(double width,
+							  double height,
+							  double padding,
+						      double line_width,
+							  double stop_radius,
+							  int bus_label_font_size,
+							  svg::Point bus_label_offset,
+							  int stop_label_font_size,
+						      svg::Point stop_label_offset,
+							  double underlayer_width) {
 		width_ = width;
-	}
-	void MapRender::SetHeight(double height) {
 		height_ = height;
-	}
-	void MapRender::SetPadding(double padding) {
 		padding_ = padding;
-	}
-	void MapRender::SetLineWidth(double line_width) {
 		line_width_ = line_width;
-	}
-	void MapRender::SetStopRadius(double stop_radius) {
 		stop_radius_ = stop_radius;
-	}
-	void MapRender::SetBusLabelFontSize(int bus_label_font_size) {
 		bus_label_font_size_ = bus_label_font_size;
-	}
-	void MapRender::SetBusLabelOffset(svg::Point bus_label_offset) {
 		bus_label_offset_ = bus_label_offset;
-	}
-	void MapRender::SetStopLabelFontSize(int stop_label_font_size) {
 		stop_label_font_size_ = stop_label_font_size;
-	}
-	void MapRender::SetStopLabelOffset(svg::Point stop_label_offset) {
 		stop_label_offset_ = stop_label_offset;
+		underlayer_width_ = underlayer_width;
 	}
+
 	void MapRender::SetUnderlayerColor(const std::string& underlayer_color) {
 		underlayer_color_ = underlayer_color;
 	}
@@ -42,9 +37,6 @@ namespace map_render {
 	void MapRender::SetUnderlayerColor(int underlayer_color_r, int underlayer_color_g, int underlayer_color_b, double underlayer_color_a) {
 		svg::Rgba color{static_cast<uint8_t>(underlayer_color_r), static_cast<uint8_t>(underlayer_color_g), static_cast<uint8_t>(underlayer_color_b), underlayer_color_a};
 		underlayer_color_ = color;
-	}
-	void MapRender::SetUnderlayerWidth(double underlayer_width) {
-		underlayer_width_ = underlayer_width;
 	}
 	void MapRender::SetColorPallete(const std::string& color) {
 		color_palette_.push_back(color);

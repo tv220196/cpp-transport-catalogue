@@ -106,94 +106,135 @@ namespace json_reader {
     }
 
     namespace output {
+        json::Node FormOutputStop(const json::Node& stat_request, const transport_catalogue::TransportCatalogue& catalogue) {
+            json::Dict result;
+            transport_catalogue::BusSearchResult bus_search_result = catalogue.SearchBus(stat_request.AsMap().at("name"s).AsString());
+            if (bus_search_result.stops_on_route == 0) {
+                result["request_id"s] = stat_request.AsMap().at("id"s);
+                result["error_message"s] = json::Node{ "not found"s };
+            }
+            else {
+                result["stop_count"s] = json::Node{ static_cast<int>(bus_search_result.stops_on_route) };
+                result["unique_stop_count"s] = json::Node{ static_cast<int>(bus_search_result.unique_stops) };
+                result["route_length"s] = json::Node{ bus_search_result.actual_route_length };
+                result["curvature"s] = json::Node{ bus_search_result.curvature };
+                result["request_id"s] = stat_request.AsMap().at("id"s);
+            }
+            return json::Node(result);
+        }
+
+        json::Node FormOutputBus(const json::Node& stat_request, const transport_catalogue::TransportCatalogue& catalogue) {
+            json::Dict result;
+            auto stop_search_result = catalogue.SearchStop(stat_request.AsMap().at("name"s).AsString());
+            if (!stop_search_result) {
+                result["request_id"s] = stat_request.AsMap().at("id"s);
+                result["error_message"s] = json::Node{ "not found"s };
+            }
+            else {
+                json::Array buses;
+                for (const auto& bus : stop_search_result->buses) {
+                    buses.push_back(json::Node(std::string{bus}));
+                }
+                result["buses"s] = json::Node{ buses };
+                result["request_id"s] = stat_request.AsMap().at("id"s);
+            }
+            return json::Node(result);
+        }
+
+        json::Node FormOutputMap(const json::Document& requests, const json::Node& stat_request, const transport_catalogue::TransportCatalogue& catalogue) {
+            json::Dict result;
+            result["request_id"s] = stat_request.AsMap().at("id"s);
+            map_render::MapRender map;
+            visual_settings::SetVisual(requests, map);
+            map.DrawMap(catalogue.GetStops(), catalogue.GetBuses());
+            std::ostringstream out;
+            map.GetMap().Render(out);
+            result["map"s] = json::Node{ out.str() };
+            return json::Node(result);
+        }
+
         json::Document FormOutput(const json::Document& requests, const transport_catalogue::TransportCatalogue& catalogue) {
             json::Array results;
             for (const auto& stat_request : requests.GetRoot().AsMap().at("stat_requests"s).AsArray()) {
-                json::Dict result;
-                if (stat_request.AsMap().at("type"s).AsString() == "Bus"s) {
-                    transport_catalogue::BusSearchResult bus_search_result = catalogue.SearchBus(stat_request.AsMap().at("name"s).AsString());
-                    if (bus_search_result.stops_on_route == 0) {
-                        result["request_id"s] = stat_request.AsMap().at("id"s);
-                        result["error_message"s] = json::Node{ "not found"s };
-                    }
-                    else {
-                        result["stop_count"s] = json::Node{ static_cast<int>(bus_search_result.stops_on_route) };
-                        result["unique_stop_count"s] = json::Node{ static_cast<int>(bus_search_result.unique_stops) };
-                        result["route_length"s] = json::Node{ bus_search_result.actual_route_length };
-                        result["curvature"s] = json::Node{ bus_search_result.curvature };
-                        result["request_id"s] = stat_request.AsMap().at("id"s);
-                    }
-                    results.push_back(result);
+                std::string stat_request_type = stat_request.AsMap().at("type"s).AsString();
+                if (stat_request_type == "Bus"s) {
+                    results.push_back(FormOutputStop(stat_request, catalogue));
                 }
-                if (stat_request.AsMap().at("type"s).AsString() == "Stop"s) {
-                    auto stop_search_result = catalogue.SearchStop(stat_request.AsMap().at("name"s).AsString());
-                    if (!stop_search_result) {
-                        result["request_id"s] = stat_request.AsMap().at("id"s);
-                        result["error_message"s] = json::Node{ "not found"s };
-                    }
-                    else {
-                        json::Array buses;
-                        for (const auto& bus : stop_search_result->buses) {
-                            buses.push_back(std::string{bus});
-                        }
-                        result["buses"s] = json::Node{ buses };
-                        result["request_id"s] = stat_request.AsMap().at("id"s);
-                    }
-                    results.push_back(result);
+                if (stat_request_type == "Stop"s) {
+                    results.push_back(FormOutputBus(stat_request, catalogue));
                 }
-                if (stat_request.AsMap().at("type"s).AsString() == "Map"s) {
-                    result["request_id"s] = stat_request.AsMap().at("id"s);
-                    map_render::MapRender map;
-                    visual_settings::SetVisual(requests, map);
-                    map.DrawMap(catalogue.GetStops(), catalogue.GetBuses());
-                    std::ostringstream out;
-                    map.GetMap().Render(out);
-                    result["map"s] = json::Node{ out.str() };
-                    results.push_back(result);
+                if (stat_request_type == "Map"s) {
+                    results.push_back(FormOutputMap(requests, stat_request, catalogue));
                 }
             }
-            return { results };
+            return { json::Node(results) };
         }
     }
 
     namespace visual_settings {
-        void SetVisual(const json::Document& requests, map_render::MapRender& map) {
-            auto render_settings = requests.GetRoot().AsMap().at("render_settings"s).AsMap();
-            map.SetWidth(render_settings.at("width"s).AsDouble());
-            map.SetHeight(render_settings.at("height"s).AsDouble());
-            map.SetPadding(render_settings.at("padding"s).AsDouble());
-            map.SetLineWidth(render_settings.at("line_width"s).AsDouble());
-            map.SetStopRadius(render_settings.at("stop_radius"s).AsDouble());
-            map.SetBusLabelFontSize(render_settings.at("bus_label_font_size"s).AsInt());
-            map.SetBusLabelOffset({ render_settings.at("bus_label_offset"s).AsArray()[0].AsDouble(), render_settings.at("bus_label_offset"s).AsArray()[1].AsDouble()});
-            map.SetStopLabelFontSize(render_settings.at("stop_label_font_size"s).AsInt());
-            map.SetStopLabelOffset({ render_settings.at("stop_label_offset"s).AsArray()[0].AsDouble(), render_settings.at("stop_label_offset"s).AsArray()[1].AsDouble() });
-            if (render_settings.at("underlayer_color"s).IsString()) {
-                map.SetUnderlayerColor(render_settings.at("underlayer_color"s).AsString());
+        enum ColorSettingType {
+            UNDERLAYER,
+            PALETTE
+        };
+        void SetColor(ColorSettingType color_setting_type, const json::Node& color, map_render::MapRender& map) {
+            if (color.IsString()) {
+                switch (color_setting_type)
+                {
+                case UNDERLAYER:
+                    map.SetUnderlayerColor(color.AsString());
+                    break;
+                case PALETTE:
+                    map.SetColorPallete(color.AsString());
+                    break;
+                default:
+                    break;
+                }
             }
             else {
-                if (render_settings.at("underlayer_color"s).AsArray().size() == 3) {
-                    map.SetUnderlayerColor(render_settings.at("underlayer_color"s).AsArray()[0].AsInt(), render_settings.at("underlayer_color"s).AsArray()[1].AsInt(), 
-                        render_settings.at("underlayer_color"s).AsArray()[2].AsInt());
+                if (color.AsArray().size() == 3) {
+                    switch (color_setting_type)
+                    {
+                    case UNDERLAYER:
+                        map.SetUnderlayerColor(color.AsArray()[0].AsInt(), color.AsArray()[1].AsInt(), color.AsArray()[2].AsInt());
+                        break;
+                    case PALETTE:
+                        map.SetColorPallete(color.AsArray()[0].AsInt(), color.AsArray()[1].AsInt(), color.AsArray()[2].AsInt());
+                        break;
+                    default:
+                        break;
+                    }
                 }
                 else {
-                    map.SetUnderlayerColor(render_settings.at("underlayer_color"s).AsArray()[0].AsInt(), render_settings.at("underlayer_color"s).AsArray()[1].AsInt(),
-                        render_settings.at("underlayer_color"s).AsArray()[2].AsInt(), render_settings.at("underlayer_color"s).AsArray()[3].AsDouble());
+                    switch (color_setting_type)
+                    {
+                    case UNDERLAYER:
+                        map.SetUnderlayerColor(color.AsArray()[0].AsInt(), color.AsArray()[1].AsInt(), color.AsArray()[2].AsInt());
+                        break;
+                    case PALETTE:
+                        map.SetColorPallete(color.AsArray()[0].AsInt(), color.AsArray()[1].AsInt(), color.AsArray()[2].AsInt(), color.AsArray()[3].AsDouble());
+                        break;
+                    default:
+                        break;
+                    }
                 }
             }
-            map.SetUnderlayerWidth(render_settings.at("underlayer_width"s).AsDouble());
+        }
+
+        void SetVisual(const json::Document& requests, map_render::MapRender& map) {
+            auto render_settings = requests.GetRoot().AsMap().at("render_settings"s).AsMap();
+            map.SetVisual(render_settings.at("width"s).AsDouble(),
+                          render_settings.at("height"s).AsDouble(),
+                          render_settings.at("padding"s).AsDouble(),
+                          render_settings.at("line_width"s).AsDouble(),
+                          render_settings.at("stop_radius"s).AsDouble(),
+                          render_settings.at("bus_label_font_size"s).AsInt(),
+                          { render_settings.at("bus_label_offset"s).AsArray()[0].AsDouble(), render_settings.at("bus_label_offset"s).AsArray()[1].AsDouble() },
+                          render_settings.at("stop_label_font_size"s).AsInt(),
+                          { render_settings.at("stop_label_offset"s).AsArray()[0].AsDouble(), render_settings.at("stop_label_offset"s).AsArray()[1].AsDouble() },
+                          render_settings.at("underlayer_width"s).AsDouble());
+            SetColor(ColorSettingType::UNDERLAYER, render_settings.at("underlayer_color"s), map);
             for (const auto& color : render_settings.at("color_palette"s).AsArray()) {
-                if (color.IsString()) {
-                    map.SetColorPallete(color.AsString());
-                }
-                else {
-                    if (color.AsArray().size() == 3) {
-                        map.SetColorPallete(color.AsArray()[0].AsInt(), color.AsArray()[1].AsInt(), color.AsArray()[2].AsInt());
-                    }
-                    else {
-                        map.SetColorPallete(color.AsArray()[0].AsInt(), color.AsArray()[1].AsInt(), color.AsArray()[2].AsInt(), color.AsArray()[3].AsDouble());
-                    }
-                }
+                SetColor(ColorSettingType::PALETTE, color, map);
             }
         }
     }

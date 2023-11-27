@@ -85,19 +85,20 @@ namespace map_render {
     class MapRender {
 	public:
 		MapRender() = default;
-		void SetWidth(double width);
-		void SetHeight(double height);
-		void SetPadding(double padding);
-		void SetLineWidth(double line_width);
-		void SetStopRadius(double stop_radius);
-		void SetBusLabelFontSize(int bus_label_font_size);
-		void SetBusLabelOffset(svg::Point bus_label_offset);
-		void SetStopLabelFontSize(int stop_label_font_size);
-		void SetStopLabelOffset(svg::Point stop_label_offset);
+        void SetVisual(double width,
+                       double height,
+                       double padding,
+                       double line_width,
+                       double stop_radius,
+                       int bus_label_font_size,
+                       svg::Point bus_label_offset,
+                       int stop_label_font_size,
+                       svg::Point stop_label_offset,
+                       double underlayer_width);
+
 		void SetUnderlayerColor(const std::string& underlayer_color);
 		void SetUnderlayerColor(int underlayer_color_r, int underlayer_color_g, int underlayer_color_b);
 		void SetUnderlayerColor(int underlayer_color_r, int underlayer_color_g, int underlayer_color_b, double underlayer_color_a);
-		void SetUnderlayerWidth(double underlayer_width);
 		void SetColorPallete(const std::string& color);
 		void SetColorPallete(int color_r, int color_g, int color_b);
 		void SetColorPallete(int color_r, int color_g, int color_b, double color_a);

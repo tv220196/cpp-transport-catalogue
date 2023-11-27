@@ -315,22 +315,9 @@ namespace json {
         }
     }
 
-    Node::Node(nullptr_t) {
-        value_ = nullptr;
-    }
-    Node::Node(int value)
-        :value_(move(value)) {}
-    Node::Node(double value)
-        :value_(move(value)) {}
-    Node::Node(string value)
-        :value_(move(value)) {}
-    Node::Node(bool value)
-        :value_(move(value)) {}
-    Node::Node(Array value)
-        :value_(move(value)) {}
-    Node::Node(Dict value)
-        :value_(move(value)) {}
-    const Node::Value& Node::GetValue() const {
+    Node::Node(Value value) 
+        :value_(move(value)){}
+    const Value& Node::GetValue() const {
         return value_;
     }
     bool Node::IsInt() const {
