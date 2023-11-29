@@ -13,14 +13,14 @@ namespace json_reader {
         struct CommandDescription {
             // Определяет, задана ли команда (поле command непустое)
             explicit operator bool() const {
-                return !command.empty();
+                return !name.empty();
             }
 
             bool operator!() const {
                 return !operator bool();
             }
 
-            std::string command;      // Название команды
+            std::string name;      // Название команды
             std::string id;           // id маршрута или остановки
             json::Dict description;  // Параметры команды
         };

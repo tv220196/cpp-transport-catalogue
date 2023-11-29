@@ -5,49 +5,44 @@ namespace map_render {
 		return std::abs(value) < EPSILON;
 	}
 
-	void MapRender::SetVisual(double width,
-							  double height,
-							  double padding,
-						      double line_width,
-							  double stop_radius,
-							  int bus_label_font_size,
-							  svg::Point bus_label_offset,
-							  int stop_label_font_size,
-						      svg::Point stop_label_offset,
-							  double underlayer_width) {
-		width_ = width;
-		height_ = height;
-		padding_ = padding;
-		line_width_ = line_width;
-		stop_radius_ = stop_radius;
-		bus_label_font_size_ = bus_label_font_size;
-		bus_label_offset_ = bus_label_offset;
-		stop_label_font_size_ = stop_label_font_size;
-		stop_label_offset_ = stop_label_offset;
-		underlayer_width_ = underlayer_width;
+	void MapRender::SetVisual(const VisualSettings& settings) {
+		width_ = settings.width;
+		height_ = settings.height;
+		padding_ = settings.padding;
+		line_width_ = settings.line_width;
+		stop_radius_ = settings.stop_radius;
+		bus_label_font_size_ = settings.bus_label_font_size;
+		bus_label_offset_ = settings.bus_label_offset;
+		stop_label_font_size_ = settings.stop_label_font_size;
+		stop_label_offset_ = settings.stop_label_offset;
+		underlayer_width_ = settings.underlayer_width;
 	}
 
-	void MapRender::SetUnderlayerColor(const std::string& underlayer_color) {
-		underlayer_color_ = underlayer_color;
+	void MapRender::SetColor(ColorSettingType color_type, const std::string& color) {
+		if (color_type == ColorSettingType::UNDERLAYER) {
+			underlayer_color_ = color;
+		}
+		else {
+			color_palette_.push_back(color);
+		}
 	}
-	void MapRender::SetUnderlayerColor(int underlayer_color_r, int underlayer_color_g, int underlayer_color_b) {
-		svg::Rgb color{static_cast<uint8_t>(underlayer_color_r), static_cast<uint8_t>(underlayer_color_g), static_cast<uint8_t>(underlayer_color_b)};
-		underlayer_color_ = color;
-	}
-	void MapRender::SetUnderlayerColor(int underlayer_color_r, int underlayer_color_g, int underlayer_color_b, double underlayer_color_a) {
-		svg::Rgba color{static_cast<uint8_t>(underlayer_color_r), static_cast<uint8_t>(underlayer_color_g), static_cast<uint8_t>(underlayer_color_b), underlayer_color_a};
-		underlayer_color_ = color;
-	}
-	void MapRender::SetColorPallete(const std::string& color) {
-		color_palette_.push_back(color);
-	}
-	void MapRender::SetColorPallete(int color_r, int color_g, int color_b) {
+	void MapRender::SetColor(ColorSettingType color_type, int color_r, int color_g, int color_b) {
 		svg::Rgb color{static_cast<uint8_t>(color_r), static_cast<uint8_t>(color_g), static_cast<uint8_t>(color_b)};
-		color_palette_.push_back(color);
+		if (color_type == ColorSettingType::UNDERLAYER) {
+			underlayer_color_ = color;
+		}
+		else {
+			color_palette_.push_back(color);
+		}
 	}
-	void MapRender::SetColorPallete(int color_r, int color_g, int color_b, double color_a) {
+	void MapRender::SetColor(ColorSettingType color_type, int color_r, int color_g, int color_b, double color_a) {
 		svg::Rgba color{static_cast<uint8_t>(color_r), static_cast<uint8_t>(color_g), static_cast<uint8_t>(color_b), color_a};
-		color_palette_.push_back(color);
+		if (color_type == ColorSettingType::UNDERLAYER) {
+			underlayer_color_ = color;
+		}
+		else {
+			color_palette_.push_back(color);
+		}
 	}
 
 	void MapRender::CreateSphereProjector(const std::deque<domain::Stop>& bus_stops) {

@@ -82,26 +82,33 @@ namespace map_render {
         double zoom_coeff_ = 0.0;
     };
 
+    struct VisualSettings {
+        double width;
+        double height;
+        double padding;
+        double line_width;
+        double stop_radius;
+        int bus_label_font_size;
+        svg::Point bus_label_offset;
+        int stop_label_font_size;
+        svg::Point stop_label_offset;
+        double underlayer_width;
+    };
+
+    enum ColorSettingType {
+        UNDERLAYER,
+        PALETTE
+    };
+
     class MapRender {
 	public:
 		MapRender() = default;
-        void SetVisual(double width,
-                       double height,
-                       double padding,
-                       double line_width,
-                       double stop_radius,
-                       int bus_label_font_size,
-                       svg::Point bus_label_offset,
-                       int stop_label_font_size,
-                       svg::Point stop_label_offset,
-                       double underlayer_width);
 
-		void SetUnderlayerColor(const std::string& underlayer_color);
-		void SetUnderlayerColor(int underlayer_color_r, int underlayer_color_g, int underlayer_color_b);
-		void SetUnderlayerColor(int underlayer_color_r, int underlayer_color_g, int underlayer_color_b, double underlayer_color_a);
-		void SetColorPallete(const std::string& color);
-		void SetColorPallete(int color_r, int color_g, int color_b);
-		void SetColorPallete(int color_r, int color_g, int color_b, double color_a);
+        void SetVisual(const VisualSettings& settings);
+
+        void SetColor(ColorSettingType color_type, const std::string& color);
+        void SetColor(ColorSettingType color_type, int color_r, int color_g, int color_b);
+        void SetColor(ColorSettingType color_type, int color_r, int color_g, int color_b, double color_a);
 
         void CreateSphereProjector(const std::deque<domain::Stop>& bus_stops);
         void DrawRoutes(const std::deque<domain::Bus>& bus_routes);
