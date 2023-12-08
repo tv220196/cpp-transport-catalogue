@@ -1,11 +1,4 @@
 #pragma once
-//#include<deque>
-//#include<set>
-//#include<string>
-//#include<string_view>
-//#include<vector>
-//#include "geo.h"
-
 #include "domain.h"
 #include<unordered_map>
 

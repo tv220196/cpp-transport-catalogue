@@ -1,11 +1,10 @@
-#include "json.h"
+#include "json_builder.h"
 #include "map_renderer.h"
 #include "transport_catalogue.h"
 
 
 namespace json_reader {
 
-    json::Document LoadJSON(std::istream& in);
     json::Document LoadJSON(std::istream& in);
      
     namespace input {

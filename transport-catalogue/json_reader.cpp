@@ -23,7 +23,7 @@ namespace json_reader {
     namespace input {
 
         void Input::FormTransportCatalogue(const json::Document& requests, transport_catalogue::TransportCatalogue& catalogue) {
-            auto base_requests = requests.GetRoot().AsMap().at("base_requests"s).AsArray();
+            auto base_requests = requests.GetRoot().AsDict().at("base_requests"s).AsArray();
             for (const auto& base_request : base_requests) {
                 ParseRequest(base_request);
             }
@@ -32,12 +32,12 @@ namespace json_reader {
 
         CommandDescription ParseCommandDescription(const json::Node& request) {
             json::Dict description;
-            for (const auto& descr : request.AsMap()) {
+            for (const auto& descr : request.AsDict()) {
                 if (descr.first != "type"s && descr.first != "name"s) {
                     description.insert(descr);
                 }
             }
-            return { request.AsMap().at("type"s).AsString(), request.AsMap().at("name"s).AsString(), description };
+            return { request.AsDict().at("type"s).AsString(), request.AsDict().at("name"s).AsString(), description };
         }
 
         void Input::ParseRequest(const json::Node& request) {
@@ -82,7 +82,7 @@ namespace json_reader {
             for (const auto& command_ : commands_) {
                 if (command_.name == "Stop"s) {
                     if (command_.description.count("road_distances"s)) {
-                        for (const auto& road_distance : command_.description.at("road_distances"s).AsMap()) {
+                        for (const auto& road_distance : command_.description.at("road_distances"s).AsDict()) {
                             catalogue.AddDistance(command_.id, road_distance.first, road_distance.second.AsInt());
                         }
                     }
@@ -108,9 +108,9 @@ namespace json_reader {
     namespace output {
         json::Node FormOutputStop(const json::Node& stat_request, const transport_catalogue::TransportCatalogue& catalogue) {
             json::Dict result;
-            transport_catalogue::BusSearchResult bus_search_result = catalogue.SearchBus(stat_request.AsMap().at("name"s).AsString());
+            transport_catalogue::BusSearchResult bus_search_result = catalogue.SearchBus(stat_request.AsDict().at("name"s).AsString());
             if (bus_search_result.stops_on_route == 0) {
-                result["request_id"s] = stat_request.AsMap().at("id"s);
+                result["request_id"s] = stat_request.AsDict().at("id"s);
                 result["error_message"s] = json::Node{ "not found"s };
             }
             else {
@@ -118,16 +118,16 @@ namespace json_reader {
                 result["unique_stop_count"s] = json::Node{ static_cast<int>(bus_search_result.unique_stops) };
                 result["route_length"s] = json::Node{ bus_search_result.actual_route_length };
                 result["curvature"s] = json::Node{ bus_search_result.curvature };
-                result["request_id"s] = stat_request.AsMap().at("id"s);
+                result["request_id"s] = stat_request.AsDict().at("id"s);
             }
             return json::Node(result);
         }
 
         json::Node FormOutputBus(const json::Node& stat_request, const transport_catalogue::TransportCatalogue& catalogue) {
             json::Dict result;
-            auto stop_search_result = catalogue.SearchStop(stat_request.AsMap().at("name"s).AsString());
+            auto stop_search_result = catalogue.SearchStop(stat_request.AsDict().at("name"s).AsString());
             if (!stop_search_result) {
-                result["request_id"s] = stat_request.AsMap().at("id"s);
+                result["request_id"s] = stat_request.AsDict().at("id"s);
                 result["error_message"s] = json::Node{ "not found"s };
             }
             else {
@@ -136,14 +136,14 @@ namespace json_reader {
                     buses.push_back(json::Node(std::string{bus}));
                 }
                 result["buses"s] = json::Node{ buses };
-                result["request_id"s] = stat_request.AsMap().at("id"s);
+                result["request_id"s] = stat_request.AsDict().at("id"s);
             }
             return json::Node(result);
         }
 
         json::Node FormOutputMap(const json::Document& requests, const json::Node& stat_request, const transport_catalogue::TransportCatalogue& catalogue) {
             json::Dict result;
-            result["request_id"s] = stat_request.AsMap().at("id"s);
+            result["request_id"s] = stat_request.AsDict().at("id"s);
             map_render::MapRender map;
             visual_settings::SetVisual(requests, map);
             map.DrawMap(catalogue.GetStops(), catalogue.GetBuses());
@@ -155,8 +155,8 @@ namespace json_reader {
 
         json::Document FormOutput(const json::Document& requests, const transport_catalogue::TransportCatalogue& catalogue) {
             json::Array results;
-            for (const auto& stat_request : requests.GetRoot().AsMap().at("stat_requests"s).AsArray()) {
-                std::string stat_request_type = stat_request.AsMap().at("type"s).AsString();
+            for (const auto& stat_request : requests.GetRoot().AsDict().at("stat_requests"s).AsArray()) {
+                std::string stat_request_type = stat_request.AsDict().at("type"s).AsString();
                 if (stat_request_type == "Bus"s) {
                     results.push_back(FormOutputStop(stat_request, catalogue));
                 }
@@ -167,7 +167,9 @@ namespace json_reader {
                     results.push_back(FormOutputMap(requests, stat_request, catalogue));
                 }
             }
-            return { json::Node(results) };
+            json::Node result;
+            result.GetValue() = results;
+            return json::Document(result);
         }
     }
 
@@ -187,7 +189,7 @@ namespace json_reader {
         }
 
         void SetVisual(const json::Document& requests, map_render::MapRender& map) {
-            auto render_settings = requests.GetRoot().AsMap().at("render_settings"s).AsMap();
+            auto render_settings = requests.GetRoot().AsDict().at("render_settings"s).AsDict();
             map_render::VisualSettings settings {
                 render_settings.at("width"s).AsDouble(),
                 render_settings.at("height"s).AsDouble(),
