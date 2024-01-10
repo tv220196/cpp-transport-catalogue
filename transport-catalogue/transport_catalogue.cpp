@@ -4,7 +4,7 @@
 namespace transport_catalogue {
 
 	void TransportCatalogue::AddStop(const std::string& stop_name, geo::Coordinates lat_lng) {
-		stops_and_buses_.AddStop({ stop_name, lat_lng, {} });
+		stops_and_buses_.AddStop({ stop_name, lat_lng, {}, stop_lookup_table_.size()});
 		stop_lookup_table_[stops_and_buses_.GetStops().back().name] = &stops_and_buses_.GetStops().back();
 	}
 
@@ -13,7 +13,7 @@ namespace transport_catalogue {
 	}
 
 	void TransportCatalogue::AddBus(const std::string& bus_number, const std::vector<std::string_view>& bus_route, bool is_roundtrip) {
-		stops_and_buses_.AddBus({ bus_number, {}, is_roundtrip});
+		stops_and_buses_.AddBus({ bus_number, {}, is_roundtrip, bus_lookup_table_.size()});
 		std::vector<domain::Stop*> route;
 		int actual_route_length = 0;
 		for (size_t i = 0; i < bus_route.size(); ++i) {
@@ -65,5 +65,9 @@ namespace transport_catalogue {
 
 	const std::deque<domain::Stop>& TransportCatalogue::GetStops() const {
 		return stops_and_buses_.GetStops();
+	}
+
+	const std::unordered_map<std::pair<std::string_view, std::string_view>, int, TwoStopsHasher>& TransportCatalogue::GetDistances() const {
+		return distances_;
 	}
 }

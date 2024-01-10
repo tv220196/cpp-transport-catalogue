@@ -17,7 +17,7 @@ namespace svg {
         // Делегируем вывод тега своим подклассам
         RenderObject(context);
 
-        context.out << std::endl;
+        context.out << "\n"s;
     }
 
     // ---------- Circle ------------------
@@ -181,8 +181,8 @@ namespace svg {
     }
 
     void Document::Render(std::ostream& out) const {
-        out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"sv << std::endl;
-        out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">"sv << std::endl;
+        out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>"sv << "\n"s;
+        out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">"sv << "\n"s;
         for (const auto& object : objects_) {
             object->Render(out);
         }

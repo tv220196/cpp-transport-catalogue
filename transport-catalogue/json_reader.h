@@ -1,6 +1,7 @@
 #include "json_builder.h"
 #include "map_renderer.h"
 #include "transport_catalogue.h"
+#include "transport_router.h"
 
 
 namespace json_reader {
@@ -27,8 +28,9 @@ namespace json_reader {
         class Input {
         public:
             Input() = default;
-
             void FormTransportCatalogue(const json::Document& requests, transport_catalogue::TransportCatalogue& catalogue);
+            void FormMap(const json::Document& requests, const transport_catalogue::TransportCatalogue& catalogue, map_render::MapRender& map);
+            void FormRoutingSettings(const json::Document& requests, transport_router::RoutingSettings& routing_settings);
 
             //Парсит строку в структуру CommandDescription и сохраняет результат в commands_
             void ParseRequest(const json::Node& request);
@@ -43,13 +45,14 @@ namespace json_reader {
     }
 
     namespace output {
-        json::Document FormOutput(const json::Document& requests, const transport_catalogue::TransportCatalogue& catalogue);
+        json::Document FormOutput(const json::Document& requests, const transport_catalogue::TransportCatalogue& catalogue, map_render::MapRender& map, 
+                                  const transport_router::RoutingSettings& routing_settings, const transport_router::BusGraph& bus_graph, 
+                                  const graph::Router<double>& router);
     }
 
     namespace visual_settings {
         void SetVisual(const json::Document& requests, map_render::MapRender& map);
     }
-
 }
 
 std::istream& operator>> (std::istream& in, json::Document& document);

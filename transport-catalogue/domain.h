@@ -11,6 +11,7 @@ namespace domain {
 		std::string name;
 		geo::Coordinates lat_lng;
 		std::set<std::string_view> buses; //автобусы, проходящие через остановку
+		size_t index;//индекс остановки в графе
 	};
 
 	struct Bus
@@ -18,6 +19,7 @@ namespace domain {
 		std::string number;
 		std::vector<Stop*> route;
 		bool is_roundtrip;
+		size_t index;//индекс автобуса в графе
 	};
 
 	class Domain {

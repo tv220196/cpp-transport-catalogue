@@ -21,7 +21,6 @@ namespace json_reader {
     }
 
     namespace input {
-
         void Input::FormTransportCatalogue(const json::Document& requests, transport_catalogue::TransportCatalogue& catalogue) {
             auto base_requests = requests.GetRoot().AsDict().at("base_requests"s).AsArray();
             for (const auto& base_request : base_requests) {
@@ -103,6 +102,16 @@ namespace json_reader {
             }
         }
 
+        void Input::FormMap(const json::Document& requests, const transport_catalogue::TransportCatalogue& catalogue, map_render::MapRender& map) {
+            visual_settings::SetVisual(requests, map);
+            map.DrawMap(catalogue.GetStops(), catalogue.GetBuses());
+        }
+
+        void Input::FormRoutingSettings(const json::Document& requests, transport_router::RoutingSettings& routing_settings) {
+            auto settings = requests.GetRoot().AsDict().at("routing_settings"s).AsDict();
+            routing_settings.SetRoutingSettings(settings.at("bus_wait_time").AsInt(), settings.at("bus_velocity").AsInt());
+        }
+
     }
 
     namespace output {
@@ -141,19 +150,87 @@ namespace json_reader {
             return json::Node(result);
         }
 
-        json::Node FormOutputMap(const json::Document& requests, const json::Node& stat_request, const transport_catalogue::TransportCatalogue& catalogue) {
+        json::Node FormOutputMap(const json::Node& stat_request, map_render::MapRender& map) {
             json::Dict result;
             result["request_id"s] = stat_request.AsDict().at("id"s);
-            map_render::MapRender map;
-            visual_settings::SetVisual(requests, map);
-            map.DrawMap(catalogue.GetStops(), catalogue.GetBuses());
             std::ostringstream out;
             map.GetMap().Render(out);
             result["map"s] = json::Node{ out.str() };
             return json::Node(result);
         }
 
-        json::Document FormOutput(const json::Document& requests, const transport_catalogue::TransportCatalogue& catalogue) {
+        std::pair<size_t, size_t> FindStopsIndex(const transport_catalogue::TransportCatalogue& catalogue, const std::string& from, const std::string& to) {
+            size_t index_from = catalogue.SearchStop(from)->index;
+            size_t index_to = catalogue.SearchStop(to)->index;
+            return { index_from, index_to };
+        }
+
+        json::Array GetArrayItems(const transport_catalogue::TransportCatalogue& catalogue, const transport_router::RoutingSettings& routing_settings,
+                                   const transport_router::BusGraph& bus_graph, const std::vector<graph::EdgeId>& edges) {
+            const auto& stops = catalogue.GetStops();
+            json::Array items;
+            for (const auto& edge : edges) {
+                auto it = bus_graph.GetEdge(edge);
+                if (it.weight == 0) {
+                    return items;
+                }
+                std::string stop = stops.at(it.from).name;
+                int time_for_wait = routing_settings.GetBusWaitTime();
+                json::Node item_wait = json::Builder{}
+                    .StartDict()
+                    .Key("stop_name"s).Value(std::string(stop))
+                    .Key("time"s).Value(double(time_for_wait))
+                    .Key("type"s).Value("Wait"s)
+                    .EndDict()
+                    .Build();
+                double time_for_bus = it.weight - time_for_wait;
+                std::string bus(bus_graph.GetBusNumber(it.from));
+                int span_count = bus_graph.GetSpanCount(it.from);
+                json::Node item_bus = json::Builder{}
+                    .StartDict()
+                    .Key("bus"s).Value(std::string(bus))
+                    .Key("span_count").Value(span_count)
+                    .Key("time").Value(double(time_for_bus))
+                    .Key("type").Value("Bus"s)
+                    .EndDict()
+                    .Build();
+                items.push_back(item_wait);
+                items.push_back(item_bus);
+            }
+
+            return items;
+        }
+
+        json::Node FormOutputRoute(const json::Node& stat_request, const transport_catalogue::TransportCatalogue& catalogue, 
+                                   const transport_router::RoutingSettings& routing_settings, const transport_router::BusGraph& bus_graph, 
+                                   const graph::Router<double>& router) {
+            auto [from, to] = FindStopsIndex(catalogue, stat_request.AsDict().at("from").AsString(), stat_request.AsDict().at("to").AsString());
+            std::optional<graph::Router<double>::RouteInfo> route = router.BuildRoute(from, to);
+            if (route) {
+                auto& info = route.value();
+                json::Array items = GetArrayItems(catalogue, routing_settings, bus_graph, info.edges);
+                json::Node dict_node = json::Builder{}
+                    .StartDict()
+                    .Key("total_time"s).Value(info.weight)
+                    .Key("request_id"s).Value(stat_request.AsDict().at("id"s).AsInt())
+                    .Key("items"s).Value(items)
+                    .EndDict()
+                    .Build();
+                return dict_node;
+            }
+            else {
+                json::Node dict_node = json::Builder{}
+                    .StartDict()
+                    .Key("error_message"s).Value("not found"s)
+                    .Key("request_id"s).Value(stat_request.AsDict().at("id"s).AsInt())
+                    .EndDict()
+                    .Build();
+                return dict_node;
+            }
+        }
+
+        json::Document FormOutput(const json::Document& requests, const transport_catalogue::TransportCatalogue& catalogue, map_render::MapRender& map, 
+                                  const transport_router::RoutingSettings& routing_settings, const transport_router::BusGraph& bus_graph, const graph::Router<double>& router) {
             json::Array results;
             for (const auto& stat_request : requests.GetRoot().AsDict().at("stat_requests"s).AsArray()) {
                 std::string stat_request_type = stat_request.AsDict().at("type"s).AsString();
@@ -164,7 +241,10 @@ namespace json_reader {
                     results.push_back(FormOutputBus(stat_request, catalogue));
                 }
                 if (stat_request_type == "Map"s) {
-                    results.push_back(FormOutputMap(requests, stat_request, catalogue));
+                    results.push_back(FormOutputMap(stat_request, map));
+                }
+                if (stat_request_type == "Route"s) {
+                    results.push_back(FormOutputRoute(stat_request, catalogue, routing_settings, bus_graph, router));
                 }
             }
             json::Node result;

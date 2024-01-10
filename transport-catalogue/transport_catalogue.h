@@ -28,6 +28,7 @@ namespace transport_catalogue {
 		const domain::Stop* SearchStop(std::string_view stop_name) const; //обработка запроса на поиск остановки
 		const std::deque<domain::Bus>& GetBuses() const;
 		const std::deque<domain::Stop>& GetStops() const;
+		const std::unordered_map<std::pair<std::string_view, std::string_view>, int, TwoStopsHasher>& GetDistances() const;
 	private:
 		domain::Domain stops_and_buses_;
 		std::unordered_map<std::string_view, domain::Stop*> stop_lookup_table_; //хеш-таблица для быстрого поиска остановки
