@@ -2,25 +2,23 @@
 
 namespace transport_router {
 
-	void RoutingSettings::SetRoutingSettings(int bus_wait_time, int bus_velocity) {
-		bus_wait_time_ = static_cast<uint16_t>(bus_wait_time);
-		bus_velocity_ = static_cast<uint16_t>(bus_velocity);
-	}
-
-	uint16_t RoutingSettings::GetBusWaitTime() const {
-		return bus_wait_time_;
-	}
-
-	uint16_t RoutingSettings::GetBusVelocity() const {
-		return bus_velocity_;
-	}
-
-	BusGraph::BusGraph(const transport_catalogue::TransportCatalogue& catalogue, const RoutingSettings& routing_settings)
-		:graph::DirectedWeightedGraph<double>(catalogue.GetStops().size() * 2)
-	{
+	BusGraph::BusGraph(const transport_catalogue::TransportCatalogue& catalogue)
+		:graph::DirectedWeightedGraph<double>(catalogue.GetStops().size() * 2) {
 		catalogue_ = &catalogue;
-		routing_settings_ = &routing_settings;
+	}
+
+	void BusGraph::BuildGraph(RoutingSettings routing_settings) {
+		routing_settings_.bus_velocity = routing_settings.bus_velocity;
+		routing_settings_.bus_wait_time = routing_settings.bus_wait_time;
 		BuildGraph();
+	}
+
+	std::optional<graph::Router<double>::RouteInfo> BusGraph::BuildRoute(size_t from, size_t to) const {
+		return router_->BuildRoute(from, to);
+	}
+
+	int BusGraph::GetBusWaitTime() const {
+		return static_cast<int>(routing_settings_.bus_wait_time);
 	}
 
 	const std::string_view BusGraph::GetBusNumber(EdgeId edge_id) const {
@@ -43,7 +41,7 @@ namespace transport_router {
 		else { 
 			return 0.0; 
 		}
-		double speed = 1.0 * m_in_km_ * routing_settings_->GetBusVelocity() / sec_in_min;
+		double speed = 1.0 * m_in_km_ * routing_settings_.bus_velocity / sec_in_min;
 		double time = 1.0 * distance / speed;
 		return time;
 	}
@@ -51,7 +49,7 @@ namespace transport_router {
 	void BusGraph::BuildGraph() {
 		for (const auto& bus : catalogue_->GetBuses()) {
 			for (size_t from = 0; from < bus.route.size() - 1; ++from) {
-				double time = static_cast<double>(routing_settings_->GetBusWaitTime());
+				double time = static_cast<double>(routing_settings_.bus_wait_time);
 				for (size_t to = from + 1; to < bus.route.size(); ++to) {
 					graph::VertexId vertex_from = bus.route.at(from)->index;
 					graph::VertexId vertex_to = bus.route.at(to)->index;
@@ -60,15 +58,16 @@ namespace transport_router {
 					size_t span_count = to - from;
 					items_[key] = { bus.index, span_count };
 				}
-				time = routing_settings_->GetBusWaitTime();
+				time = routing_settings_.bus_wait_time;
 			}
 			if (!bus.is_roundtrip) {
-				double time = static_cast<double>(routing_settings_->GetBusWaitTime());
+				double time = static_cast<double>(routing_settings_.bus_wait_time);
 				size_t span_count = 0;
 				graph::VertexId vertex_last_stop = bus.route[bus.route.size()/2 + 1]->index;
 				EdgeId key_last_stop = this->AddEdge({ vertex_last_stop, vertex_last_stop, time });
 				items_[key_last_stop] = { bus.index, span_count };
 			}
 		}
+		router_ = new graph::Router<double>{*this};
 	}
 }

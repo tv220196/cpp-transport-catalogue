@@ -12,15 +12,9 @@ using namespace graph;
 
 namespace transport_router {
 
-	class RoutingSettings {
-	public:
-		RoutingSettings() = default;
-		void SetRoutingSettings(int bus_wait_time, int bus_velocity);
-		uint16_t GetBusWaitTime() const;
-		uint16_t GetBusVelocity() const;
-	private:
-		uint16_t bus_wait_time_ = 0; // время ожидания автобуса на остановке в минутах
-		uint16_t bus_velocity_ = 0; //скорость автобуса в км/ч
+	struct RoutingSettings {
+		uint16_t bus_wait_time = 0; // время ожидания автобуса на остановке в минутах
+		uint16_t bus_velocity = 0; //скорость автобуса в км/ч
 	};
 
 	struct Item {
@@ -30,14 +24,17 @@ namespace transport_router {
 
 	class BusGraph : public graph::DirectedWeightedGraph<double> {
 	public:
-		BusGraph(const transport_catalogue::TransportCatalogue& catalogue, const RoutingSettings& routing_settings);
-
+		BusGraph(const transport_catalogue::TransportCatalogue& catalogue);
+		void BuildGraph(RoutingSettings routing_settings);
+		std::optional<graph::Router<double>::RouteInfo> BuildRoute(size_t from, size_t to) const;
+		int GetBusWaitTime() const;
 		const std::string_view GetBusNumber(EdgeId edge_id) const;
 		int GetSpanCount(EdgeId edge_id) const;
 
 	private:
 		const transport_catalogue::TransportCatalogue* catalogue_ = nullptr;
-		const RoutingSettings* routing_settings_ = nullptr;
+		RoutingSettings routing_settings_;
+		graph::Router<double>* router_ = nullptr;
 		std::map<graph::EdgeId, Item> items_;
 		int m_in_km_ = 1000;
 		int sec_in_min = 60;
