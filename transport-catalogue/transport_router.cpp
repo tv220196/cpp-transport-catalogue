@@ -2,19 +2,17 @@
 
 namespace transport_router {
 
-	BusGraph::BusGraph(const transport_catalogue::TransportCatalogue& catalogue)
-		:graph::DirectedWeightedGraph<double>(catalogue.GetStops().size() * 2) {
-		catalogue_ = &catalogue;
-	}
-
-	void BusGraph::BuildGraph(RoutingSettings routing_settings) {
-		routing_settings_.bus_velocity = routing_settings.bus_velocity;
-		routing_settings_.bus_wait_time = routing_settings.bus_wait_time;
+	BusGraph::BusGraph(const transport_catalogue::TransportCatalogue& catalogue, RoutingSettings routing_settings)
+		:graph::DirectedWeightedGraph<double>(catalogue.GetStops().size() * 2)
+		,catalogue_(&catalogue)
+		,routing_settings_(routing_settings) {
 		BuildGraph();
 	}
 
-	std::optional<graph::Router<double>::RouteInfo> BusGraph::BuildRoute(size_t from, size_t to) const {
-		return router_->BuildRoute(from, to);
+	std::optional<graph::Router<double>::RouteInfo> BusGraph::BuildRoute(const std::string& from, const std::string& to) const {
+		size_t index_from = catalogue_->SearchStop(from)->index;
+		size_t index_to = catalogue_->SearchStop(to)->index;
+		return router_->BuildRoute(index_from, index_to);
 	}
 
 	int BusGraph::GetBusWaitTime() const {

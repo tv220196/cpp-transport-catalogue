@@ -30,7 +30,7 @@ namespace json_reader {
             Input() = default;
             void FormTransportCatalogue(const json::Document& requests, transport_catalogue::TransportCatalogue& catalogue);
             void FormMap(const json::Document& requests, const transport_catalogue::TransportCatalogue& catalogue, map_render::MapRender& map);
-            void FormBusGraph(const json::Document& requests, transport_router::BusGraph& bus_graph);
+            transport_router::RoutingSettings FormRoutingSettings(const json::Document& requests);
 
             //Парсит строку в структуру CommandDescription и сохраняет результат в commands_
             void ParseRequest(const json::Node& request);

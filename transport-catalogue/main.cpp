@@ -9,8 +9,7 @@ int main() {
     base_requests.FormTransportCatalogue(requests, catalogue);
     map_render::MapRender map;
     base_requests.FormMap(requests, catalogue, map);
-    transport_router::BusGraph bus_graph(catalogue);
-    base_requests.FormBusGraph(requests, bus_graph);
+    transport_router::BusGraph bus_graph(catalogue, base_requests.FormRoutingSettings(requests));
     json::Document results = json_reader::output::FormOutput(requests, catalogue, map, bus_graph);
     json::Print(results, std::cout);
 }

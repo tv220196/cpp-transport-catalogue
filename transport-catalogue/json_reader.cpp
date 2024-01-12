@@ -107,20 +107,12 @@ namespace json_reader {
             map.DrawMap(catalogue.GetStops(), catalogue.GetBuses());
         }
 
-        /*void Input::FormRoutingSettings(const json::Document& requests, transport_router::RoutingSettings& routing_settings) {
-            auto settings = requests.GetRoot().AsDict().at("routing_settings"s).AsDict();
-            //routing_settings.SetRoutingSettings(settings.at("bus_wait_time").AsInt(), settings.at("bus_velocity").AsInt());
-            routing_settings.bus_wait_time_ = static_cast<uint16_t>(settings.at("bus_wait_time").AsInt());
-            routing_settings.bus_velocity_ = static_cast<uint16_t>(settings.at("bus_velocity").AsInt());
-        }*/
-
-        void Input::FormBusGraph(const json::Document& requests, /*const transport_catalogue::TransportCatalogue& catalogue,*/ transport_router::BusGraph& bus_graph) {
+        transport_router::RoutingSettings Input::FormRoutingSettings(const json::Document& requests) {
             transport_router::RoutingSettings routing_settings;
             routing_settings.bus_wait_time = static_cast<uint16_t>(requests.GetRoot().AsDict().at("routing_settings"s).AsDict().at("bus_wait_time").AsInt());
             routing_settings.bus_velocity = static_cast<uint16_t>(requests.GetRoot().AsDict().at("routing_settings"s).AsDict().at("bus_velocity").AsInt());
-            bus_graph.BuildGraph(routing_settings);
+            return routing_settings;
         }
-
     }
 
     namespace output {
@@ -168,12 +160,6 @@ namespace json_reader {
             return json::Node(result);
         }
 
-        std::pair<size_t, size_t> FindStopsIndex(const transport_catalogue::TransportCatalogue& catalogue, const std::string& from, const std::string& to) {
-            size_t index_from = catalogue.SearchStop(from)->index;
-            size_t index_to = catalogue.SearchStop(to)->index;
-            return { index_from, index_to };
-        }
-
         json::Array GetArrayItems(const transport_catalogue::TransportCatalogue& catalogue, const transport_router::BusGraph& bus_graph, 
                                   const std::vector<graph::EdgeId>& edges) {
             const auto& stops = catalogue.GetStops();
@@ -212,8 +198,7 @@ namespace json_reader {
 
         json::Node FormOutputRoute(const json::Node& stat_request, const transport_catalogue::TransportCatalogue& catalogue, 
                                    const transport_router::BusGraph& bus_graph) {
-            auto [from, to] = FindStopsIndex(catalogue, stat_request.AsDict().at("from").AsString(), stat_request.AsDict().at("to").AsString());
-            std::optional<graph::Router<double>::RouteInfo> route = bus_graph.BuildRoute(from, to);
+            std::optional<graph::Router<double>::RouteInfo> route = bus_graph.BuildRoute(stat_request.AsDict().at("from").AsString(), stat_request.AsDict().at("to").AsString());
             if (route) {
                 auto& info = route.value();
                 json::Array items = GetArrayItems(catalogue, bus_graph, info.edges);

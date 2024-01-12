@@ -24,9 +24,8 @@ namespace transport_router {
 
 	class BusGraph : public graph::DirectedWeightedGraph<double> {
 	public:
-		BusGraph(const transport_catalogue::TransportCatalogue& catalogue);
-		void BuildGraph(RoutingSettings routing_settings);
-		std::optional<graph::Router<double>::RouteInfo> BuildRoute(size_t from, size_t to) const;
+		explicit BusGraph(const transport_catalogue::TransportCatalogue& catalogue, RoutingSettings routing_settings);
+		std::optional<graph::Router<double>::RouteInfo> BuildRoute(const std::string& from, const std::string& to) const;
 		int GetBusWaitTime() const;
 		const std::string_view GetBusNumber(EdgeId edge_id) const;
 		int GetSpanCount(EdgeId edge_id) const;
